@@ -1,0 +1,343 @@
+/* Premium Claude Code-like Aesthetics */
+:root {
+  --claude-bg: var(--vscode-editor-background);
+  --claude-surface: var(--vscode-sideBar-background);
+  --claude-border: var(--vscode-widget-border, rgba(128, 128, 128, 0.2));
+  --claude-text: var(--vscode-foreground);
+  --claude-text-muted: var(--vscode-descriptionForeground);
+  --claude-accent: var(--vscode-button-background);
+  --claude-accent-hover: var(--vscode-button-hoverBackground);
+  --font-family: var(--vscode-font-family), "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* { box-sizing: border-box; }
+
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  color: var(--claude-text);
+  background: var(--claude-bg);
+  font-family: var(--font-family);
+  font-size: var(--vscode-font-size, 14px);
+  line-height: 1.6;
+}
+
+/* ---------- Messages ---------- */
+
+#messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 16px 8px;
+  scroll-behavior: smooth;
+}
+
+#messages::-webkit-scrollbar {
+  width: 6px;
+}
+#messages::-webkit-scrollbar-thumb {
+  background: var(--claude-border);
+  border-radius: 3px;
+}
+
+#welcome {
+  text-align: center;
+  padding: 40px 12px 24px;
+  color: var(--claude-text-muted);
+  animation: fadeIn 0.6s ease-out;
+}
+#welcome[hidden] { display: none; }
+#welcome h2 { 
+  margin: 16px 0 8px; 
+  font-size: 1.5em; 
+  font-weight: 500;
+  color: var(--claude-text); 
+  letter-spacing: -0.02em;
+}
+#welcome p { margin: 0 0 24px; font-size: 1.05em; }
+
+.logo {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto;
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+  font-weight: 400;
+  font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  font-size: 32px;
+  color: #fff;
+  background: linear-gradient(135deg, #d97757, #ab6048);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.suggestions { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 10px; 
+  max-width: 90%;
+  margin: 0 auto;
+}
+
+.suggestion {
+  text-align: left;
+  padding: 12px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.95em;
+  color: var(--claude-text);
+  background: var(--claude-surface);
+  border: 1px solid var(--claude-border);
+  transition: all var(--transition);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+.suggestion:hover { 
+  background: var(--vscode-list-hoverBackground); 
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+}
+
+.msg { 
+  margin-bottom: 24px; 
+  overflow-wrap: anywhere; 
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.3s ease-out forwards;
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+@keyframes slideUp {
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.msg.user {
+  align-items: flex-end;
+}
+
+.msg.bot {
+  align-items: flex-start;
+}
+
+.msg.user .body {
+  white-space: pre-wrap;
+  padding: 10px 16px;
+  border-radius: 16px;
+  border-bottom-right-radius: 4px;
+  background: var(--claude-surface);
+  color: var(--claude-text);
+  border: 1px solid var(--claude-border);
+  max-width: 95%;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.msg.bot .who {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9em;
+  font-weight: 500;
+  margin-bottom: 6px;
+  color: var(--claude-text);
+}
+
+.msg.bot .who::before {
+  content: "M";
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  font-family: ui-serif, Georgia, Cambria, serif;
+  font-size: 12px;
+  background: linear-gradient(135deg, #d97757, #ab6048);
+  color: #fff;
+}
+
+.msg.error .body {
+  padding: 12px 16px;
+  border-radius: 8px;
+  color: var(--vscode-errorForeground);
+  background: var(--vscode-inputValidation-errorBackground, transparent);
+  border: 1px solid var(--vscode-inputValidation-errorBorder, var(--vscode-errorForeground));
+  font-size: 0.95em;
+  margin-top: 8px;
+}
+
+.body {
+  width: 100%;
+}
+
+.body p { margin: 0 0 12px; }
+.body p:last-child { margin-bottom: 0; }
+.body ul, .body ol { margin: 0 0 12px; padding-left: 24px; }
+.body li { margin-bottom: 4px; }
+.body h1, .body h2, .body h3, .body h4, .body h5, .body h6 { margin: 16px 0 8px; font-weight: 600; }
+.body h1 { font-size: 1.4em; }
+.body h2 { font-size: 1.25em; border-bottom: 1px solid var(--claude-border); padding-bottom: 4px; }
+.body h3 { font-size: 1.1em; }
+
+.body code {
+  font-family: var(--vscode-editor-font-family, "Fira Code", monospace);
+  font-size: 0.85em;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--claude-surface);
+  border: 1px solid var(--claude-border);
+  color: var(--claude-text);
+}
+
+/* ---------- Code blocks ---------- */
+
+.code {
+  margin: 12px 0;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--claude-border);
+  background: var(--vscode-editor-background);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.code-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 12px;
+  font-size: 0.85em;
+  font-family: var(--vscode-editor-font-family, monospace);
+  color: var(--claude-text-muted);
+  background: var(--claude-surface);
+  border-bottom: 1px solid var(--claude-border);
+}
+
+.code-actions button {
+  font: inherit;
+  font-size: 0.9em;
+  padding: 4px 8px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: var(--claude-text-muted);
+  background: transparent;
+  transition: all 0.15s ease;
+}
+.code-actions button:hover {
+  color: var(--claude-text);
+  background: var(--vscode-toolbar-hoverBackground, rgba(128,128,128,0.1));
+  border-color: var(--claude-border);
+}
+
+.code pre { margin: 0; padding: 12px; overflow-x: auto; }
+.code pre code { 
+  padding: 0; 
+  background: none; 
+  border: none; 
+  font-size: 0.9em; 
+  line-height: 1.5;
+}
+
+/* ---------- Typing dots ---------- */
+
+.typing { display: flex; gap: 6px; padding: 12px 4px; }
+.typing span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--claude-text-muted);
+  animation: bounce 1.4s infinite ease-in-out both;
+}
+.typing span:nth-child(1) { animation-delay: -0.32s; }
+.typing span:nth-child(2) { animation-delay: -0.16s; }
+@keyframes bounce { 
+  0%, 80%, 100% { transform: scale(0); opacity: 0.4; } 
+  40% { transform: scale(1); opacity: 1; } 
+}
+
+/* ---------- Composer ---------- */
+
+footer { padding: 12px 16px 20px; background: var(--claude-bg); position: relative; }
+
+footer::before {
+  content: "";
+  position: absolute;
+  top: -20px;
+  left: 0;
+  right: 0;
+  height: 20px;
+  background: linear-gradient(transparent, var(--claude-bg));
+  pointer-events: none;
+}
+
+.composer {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 8px 10px 8px 14px;
+  border-radius: 12px;
+  background: var(--claude-surface);
+  border: 1px solid var(--claude-border);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  transition: all var(--transition);
+}
+.composer:focus-within { 
+  border-color: var(--claude-text-muted); 
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+#input {
+  flex: 1;
+  resize: none;
+  border: none;
+  outline: none;
+  padding: 6px 0;
+  max-height: 200px;
+  font: inherit;
+  font-size: 1em;
+  color: var(--vscode-input-foreground);
+  background: transparent;
+  line-height: 1.5;
+}
+#input::placeholder { color: var(--vscode-input-placeholderForeground); opacity: 0.7; }
+
+#send {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  border: none;
+  border-radius: 8px;
+  color: var(--claude-surface);
+  background: var(--claude-text);
+  transition: all var(--transition);
+}
+#send:hover { 
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+#send:active { transform: scale(0.95); }
+#send svg { width: 14px; height: 14px; fill: currentColor; }
+#send .icon-stop, .streaming #send .icon-send { display: none; }
+.streaming #send .icon-stop { display: block; }
+.streaming #send {
+  background: var(--vscode-errorForeground, #d32f2f);
+  color: #fff;
+}
+
+.hint {
+  margin-top: 8px;
+  font-size: 0.75em;
+  text-align: center;
+  color: var(--claude-text-muted);
+  opacity: 0.7;
+}

@@ -1,5 +1,9 @@
 # Maham Code
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
+[![Status: Milestone 1](https://img.shields.io/badge/status-milestone%201-orange.svg)](#roadmap)
+
 An open-source coding assistant built from scratch to learn how tools like Claude Code work under the hood.
 
 It's being built in public, one milestone at a time. Right now it's a chat assistant; next it learns to read and edit files on its own.
@@ -29,6 +33,8 @@ Upgrade the brain once and every face gets the upgrade.
 You need Python 3.10+ and a free API key from [Groq](https://console.groq.com/keys).
 
 ```bash
+git clone https://github.com/mahamsultana/mahi-code.git
+cd mahi-code
 pip install -r requirements.txt
 cp .env.example .env      # then paste your key into .env
 python -m cli.main        # on Windows: py -m cli.main
@@ -72,6 +78,27 @@ See `.env.example` for the matching model names.
 - **The `messages` list is the memory.** The API remembers nothing between calls, so the whole conversation is sent again every turn.
 - **Streaming** shows the reply piece by piece instead of waiting for the full answer.
 - **The faces contain no AI logic.** They only display strings.
+
+## Project structure
+
+```
+mahi-code/
+├── core/
+│   ├── client.py        # Connects to the LLM provider
+│   └── chat.py          # Conversation class: memory + streaming
+├── cli/main.py          # Terminal app
+├── desktop/
+│   ├── app.py           # Desktop window (pywebview)
+│   └── index.html       # Desktop UI
+├── server.py            # HTTP server the VS Code extension talks to
+└── vscode-extension/
+    ├── extension.js     # Sidebar provider: bridge between VS Code and server.py
+    └── media/           # Chat UI (main.js, main.css, icon.svg)
+```
+
+## Contributing
+
+This is a learning project built in public, and ideas, issues and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 

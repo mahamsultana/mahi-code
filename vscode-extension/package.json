@@ -1,0 +1,66 @@
+{
+  "name": "maham-code",
+  "displayName": "Maham Code",
+  "description": "Your own coding assistant, right in VS Code.",
+  "version": "0.0.2",
+  "publisher": "mahamsultana",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mahamsultana/mahi-code.git"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "main": "./extension.js",
+  "activationEvents": [],
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "mahamCode",
+          "title": "Maham Code",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "mahamCode": [
+        {
+          "type": "webview",
+          "id": "mahamCode.chat",
+          "name": "Chat"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "mahamCode.newChat",
+        "title": "New Chat",
+        "category": "Maham Code",
+        "icon": "$(add)"
+      },
+      {
+        "command": "mahamCode.askSelection",
+        "title": "Ask Maham Code about selection",
+        "category": "Maham Code"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "mahamCode.newChat",
+          "when": "view == mahamCode.chat",
+          "group": "navigation"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "mahamCode.askSelection",
+          "when": "editorHasSelection",
+          "group": "navigation"
+        }
+      ]
+    }
+  }
+}
