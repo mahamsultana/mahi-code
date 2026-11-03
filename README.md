@@ -1,12 +1,16 @@
+<p align="center">
+  <img src="docs/logo.svg" width="96" alt="Maham Code logo">
+</p>
+
 # Maham Code
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
-[![Status: Milestone 1](https://img.shields.io/badge/status-milestone%201-orange.svg)](#roadmap)
+[![Status: Milestone 2](https://img.shields.io/badge/status-milestone%202-orange.svg)](#roadmap)
 
 An open-source coding assistant built from scratch to learn how tools like Claude Code work under the hood.
 
-It's being built in public, one milestone at a time. Right now it's a chat assistant; next it learns to read and edit files on its own.
+It's being built in public, one milestone at a time. It can now read, list and write files in your project by itself; next it learns to ask before changing anything.
 
 ## One brain, three faces
 
@@ -69,15 +73,45 @@ See `.env.example` for the matching model names.
 ## Roadmap
 
 - [x] **Milestone 1:** Chat in the terminal, desktop and VS Code, with streaming replies and conversation memory
-- [ ] **Milestone 2:** Tools: the assistant can read and write files
-- [ ] **Milestone 3:** Agent loop: it plans, runs tools and checks its own work
+- [x] **Milestone 2:** Tools and the agent loop: the assistant explores, reads, edits, creates and renames files on its own
+- [ ] **Milestone 3:** Approval prompts: you confirm before it changes a file
 - [ ] **Milestone 4:** Running commands, with permission prompts
 
-## How it works (Milestone 1)
+## How it works
+
+**Milestone 1: chat**
 
 - **The `messages` list is the memory.** The API remembers nothing between calls, so the whole conversation is sent again every turn.
 - **Streaming** shows the reply piece by piece instead of waiting for the full answer.
 - **The faces contain no AI logic.** They only display strings.
+
+**Milestone 2: tools and the agent loop**
+
+- **Tools are described to the model, not given to it.** `core/tools.py` defines seven tools, modeled on Claude Code's, each with a JSON schema. The model can only *ask* for a tool call; Python decides whether to run it.
+
+  | Tool | What it does |
+  |---|---|
+  | `list_files` | List one folder |
+  | `find_files` | Find files by name pattern, like `**/*.py` |
+  | `search_files` | Search inside files, returning `path:line: text` |
+  | `read_file` | Read a file |
+  | `edit_file` | Change part of a file in place by replacing exact text |
+  | `write_file` | Create a file, or replace one completely |
+  | `rename_file` | Rename or move a file or folder; never overwrites |
+
+  There's no delete tool yet; that waits for approval prompts in Milestone 3.
+- **The agent loop** lives in `Conversation.run()`. Each round, it sends the history plus the tool list. If the model asks for tools, Python runs them, adds the results to `messages` as `tool` messages, and asks again. When the model replies without asking for a tool, that reply is the answer. It stops after 10 rounds so a confused model can't loop forever.
+- **Tools never crash the loop.** Errors come back as text, such as "file not found", so the model can read them and try something else.
+- **Safety:** tools only touch files inside the folder you started from, and `.env` and `.git` are off limits. Whatever a tool returns is sent to your LLM provider.
+
+You'll see each tool call as it happens:
+
+```
+you > what model does core/client.py use?
+bot > [tool] Reading core/client.py
+
+It defaults to openai/gpt-oss-120b, set by MAHAM_CODE_MODEL in .env.
+```
 
 ## Project structure
 
@@ -85,16 +119,27 @@ See `.env.example` for the matching model names.
 mahi-code/
 ├── core/
 │   ├── client.py        # Connects to the LLM provider
-│   └── chat.py          # Conversation class: memory + streaming
+│   ├── chat.py          # Conversation class: memory, streaming, agent loop
+│   └── tools.py         # The 7 file tools + safety checks
 ├── cli/main.py          # Terminal app
 ├── desktop/
 │   ├── app.py           # Desktop window (pywebview)
 │   └── index.html       # Desktop UI
 ├── server.py            # HTTP server the VS Code extension talks to
+├── tests/               # Tool unit tests + live agent scenarios
 └── vscode-extension/
     ├── extension.js     # Sidebar provider: bridge between VS Code and server.py
     └── media/           # Chat UI (main.js, main.css, icon.svg)
 ```
+
+## Tests
+
+```bash
+python -m unittest discover tests     # tool tests: fast, no API key needed
+python -m tests.agent_scenarios       # real conversations against the model (uses your quota)
+```
+
+The scenario tests run multi-turn conversations in a temporary folder, such as "create hello.py" followed by "rename the file to greet.py", then check the files on disk: the new file exists, the old one is gone, and nothing extra was created.
 
 ## Contributing
 

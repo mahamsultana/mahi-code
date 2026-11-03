@@ -23,8 +23,11 @@ def main() -> None:
             continue
 
         print("bot > ", end="", flush=True)
-        for chunk in convo.ask_stream(user_text):
-            print(chunk, end="", flush=True)
+        try:
+            for chunk in convo.run(user_text):
+                print(chunk, end="", flush=True)
+        except Exception as e:  # e.g. rate limit or retired model: report it and keep going
+            print(f"\n[error] {e}")
         print("\n")
 
 

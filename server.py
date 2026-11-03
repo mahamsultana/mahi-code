@@ -1,4 +1,6 @@
 """HTTP face for the VS Code extension (it can't import Python directly)."""
+from pathlib import Path
+
 from flask import Flask, Response, request
 
 from core.chat import Conversation
@@ -9,11 +11,19 @@ convo = Conversation()
 
 @app.post("/chat")
 def chat():
-    user_text = request.get_json()["message"]
+    data = request.get_json()
+    user_text = data["message"]
+    root = data.get("root")  # the folder open in VS Code, if any
 
     def stream():
         try:
-            yield from convo.ask_stream(user_text)
+            if root and Path(root).is_dir():
+                convo.root = Path(root)
+                yield from convo.run(user_text)
+            else:
+                # No folder open: chat only, so it never edits files somewhere unexpected.
+                yield "(No folder is open, so I can't see your files. Open a folder to let me read and edit them.)\n\n"
+                yield from convo.ask_stream(user_text)
         except Exception as e:  # e.g. rate limit or retired model: show it in the chat
             yield f"\n\n**Error:** {e}"
 

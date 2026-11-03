@@ -2,7 +2,18 @@
   "version": "0.2.0",
   "configurations": [
     {
+      // F5: opens a test window with the extension loaded. It runs
+      // run-extension.js instead of debugging the extension directly,
+      // because attaching the debugger crashes the window on some setups.
       "name": "Run Maham Code extension",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/.vscode/run-extension.js",
+      "console": "internalConsole"
+    },
+    {
+      // Real debugging with breakpoints. Use only if it works on your machine.
+      "name": "Debug Maham Code extension (breakpoints)",
       "type": "extensionHost",
       "request": "launch",
       "args": [

@@ -1,0 +1,18 @@
+{
+  // Opens a test window with the extension loaded, without attaching the debugger.
+  // Use it if F5 opens a window that closes straight away.
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Run Maham Code extension (no debugger)",
+      "type": "shell",
+      "command": "code",
+      "args": [
+        "--new-window",
+        "--disable-extensions",
+        "--extensionDevelopmentPath=${workspaceFolder}/vscode-extension"
+      ],
+      "problemMatcher": []
+    }
+  ]
+}

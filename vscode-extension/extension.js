@@ -4,12 +4,29 @@ const vscode = require("vscode");
 
 const SERVER = "http://localhost:8765";
 
+// One row on the welcome screen: clicking it sends the prompt.
+function suggestion(label, sub, prompt) {
+  return `<button class="suggestion" data-prompt="${prompt.replace(/"/g, "&quot;")}">
+    <span class="label">${label}</span><span class="sub">${sub}</span>
+  </button>`;
+}
+
 class ChatViewProvider {
   constructor(extensionUri) {
     this.extensionUri = extensionUri;
     this.view = null;
     this.controller = null; // lets the Stop button cancel a reply
     this.pending = null; // a question waiting for the view to finish loading
+    this.lastEditor = vscode.window.activeTextEditor; // where Insert puts code
+  }
+
+  // The folder the assistant works in: the first one open in this window.
+  folder() {
+    return vscode.workspace.workspaceFolders?.[0];
+  }
+
+  sendFolder() {
+    this.post({ type: "folder", name: this.folder()?.name || null });
   }
 
   resolveWebviewView(view) {
@@ -19,8 +36,9 @@ class ChatViewProvider {
     view.webview.html = this.getHtml(view.webview);
 
     view.webview.onDidReceiveMessage((msg) => {
-      if (msg.type === "ready" && this.pending) {
-        this.post({ type: "ask", text: this.pending });
+      if (msg.type === "ready") {
+        this.sendFolder();
+        if (this.pending) this.post({ type: "ask", text: this.pending });
         this.pending = null;
       } else if (msg.type === "send") this.chat(msg.text);
       else if (msg.type === "stop") this.controller?.abort();
@@ -42,7 +60,8 @@ class ChatViewProvider {
       const res = await fetch(`${SERVER}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text }),
+        // Tell the brain which folder to work in: the one open in this window.
+        body: JSON.stringify({ message: text, root: this.folder()?.uri.fsPath }),
         signal: this.controller.signal,
       });
       if (!res.ok) throw new Error(`The server answered with error ${res.status}.`);
@@ -50,11 +69,15 @@ class ChatViewProvider {
       // Read the streamed reply and pass each piece to the webview.
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
+      let reply = "";
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        this.post({ type: "chunk", text: decoder.decode(value, { stream: true }) });
+        const chunk = decoder.decode(value, { stream: true });
+        reply += chunk;
+        this.post({ type: "chunk", text: chunk });
       }
+      await this.openWrittenFile(reply);
     } catch (err) {
       if (err.name !== "AbortError") {
         const offline = err.cause?.code === "ECONNREFUSED" || err.message === "fetch failed";
@@ -87,13 +110,40 @@ class ChatViewProvider {
     else this.pending = text;
   }
 
+  // After the assistant changes files: close tabs of files it renamed away, and
+  // show the last file it created, edited or renamed, so you can see the result.
+  async openWrittenFile(reply) {
+    const folder = this.folder();
+    if (!folder) return;
+    const uri = (path) => vscode.Uri.joinPath(folder.uri, path.trim());
+
+    const renamedAway = [...reply.matchAll(/^\[tool\] Renaming (.+) to .+$/gm)].map((m) => uri(m[1]).fsPath);
+    const staleTabs = vscode.window.tabGroups.all
+      .flatMap((group) => group.tabs)
+      .filter((tab) => renamedAway.includes(tab.input?.uri?.fsPath));
+    if (staleTabs.length) await vscode.window.tabGroups.close(staleTabs);
+
+    const changed = [...reply.matchAll(/^\[tool\] (?:(?:Writing|Editing) (.+)|Renaming .+ to (.+))$/gm)];
+    if (!changed.length) return;
+    const last = changed[changed.length - 1];
+    try {
+      await vscode.window.showTextDocument(uri(last[1] || last[2]), { preview: false });
+    } catch {
+      // The change failed (the reply explains why), so there's nothing to open.
+    }
+  }
+
   async insert(code) {
-    const editor = vscode.window.activeTextEditor || vscode.window.visibleTextEditors[0];
+    // Clicking in the sidebar moves focus away from your file, so use the
+    // last file you were editing. No file open? Put the code in a new tab.
+    const editor = vscode.window.visibleTextEditors.includes(this.lastEditor) ? this.lastEditor : null;
     if (!editor) {
-      vscode.window.showWarningMessage("Open a file first, then click Insert.");
+      const doc = await vscode.workspace.openTextDocument({ content: code });
+      await vscode.window.showTextDocument(doc);
       return;
     }
     await editor.edit((edit) => edit.replace(editor.selection, code));
+    await vscode.window.showTextDocument(editor.document, editor.viewColumn);
   }
 
   getHtml(webview) {
@@ -111,17 +161,25 @@ class ChatViewProvider {
 <body>
   <main id="messages">
     <section id="welcome">
-      <div class="logo">M</div>
-      <h2>Maham Code</h2>
-      <p>Ask about code, get explanations, or have it write something for you.</p>
+      <svg class="mark" viewBox="0 0 128 128" aria-hidden="true">
+        <path d="M24 96V32l28 34 28-34v64" fill="none" stroke="currentColor" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+        <rect x="94" y="86" width="22" height="10" rx="2" fill="currentColor" opacity="0.5"/>
+      </svg>
+      <h2>What are we working on?</h2>
+      <p class="tagline">Maham Code can read, search, edit and create files in this folder.</p>
       <div class="suggestions">
-        <button class="suggestion">Explain Python generators simply</button>
-        <button class="suggestion">Write a function that checks if a string is a palindrome</button>
-        <button class="suggestion">What's the difference between a list and a tuple?</button>
+        ${suggestion("Explain this project", "Structure and purpose",
+          "Look through this project and explain what it does and how it's organized.")}
+        ${suggestion("Create a file", "hello.py that prints a greeting", "Create hello.py that prints a greeting")}
+        ${suggestion("Find TODOs", "Search every file", "Search the project for TODO comments and list them.")}
+        ${suggestion("Ask a question", "Python generators, simply", "Explain Python generators simply")}
       </div>
     </section>
   </main>
   <footer>
+    <button id="jump" title="Scroll to latest" aria-label="Scroll to latest" hidden>
+      <svg class="icon" viewBox="0 0 16 16"><path d="M8 3v10M4 9l4 4 4-4"/></svg>
+    </button>
     <div class="composer">
       <textarea id="input" rows="1" placeholder="Ask Maham Code..."></textarea>
       <button id="send" title="Send (Enter)" aria-label="Send">
@@ -129,7 +187,10 @@ class ChatViewProvider {
         <svg class="icon-stop" viewBox="0 0 16 16"><rect x="3.5" y="3.5" width="9" height="9" rx="1.5"/></svg>
       </button>
     </div>
-    <div class="hint">Enter to send · Shift+Enter for a new line</div>
+    <div class="meta">
+      <span id="folder" class="chip"></span>
+      <span class="keys">Enter to send · Shift+Enter new line</span>
+    </div>
   </footer>
   <script nonce="${nonce}" src="${uri("main.js")}"></script>
 </body>
@@ -140,12 +201,28 @@ class ChatViewProvider {
 function activate(context) {
   const provider = new ChatViewProvider(context.extensionUri);
 
+  // A status bar button, so the chat is one click away even if the sidebar icon is hidden.
+  const statusItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
+  statusItem.text = "$(comment-discussion) Maham Code";
+  statusItem.tooltip = "Open Maham Code";
+  statusItem.command = "mahamCode.open";
+  statusItem.show();
+  context.subscriptions.push(statusItem);
+
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider("mahamCode.chat", provider, {
       webviewOptions: { retainContextWhenHidden: true },
     }),
 
+    vscode.commands.registerCommand("mahamCode.open", () => vscode.commands.executeCommand("mahamCode.chat.focus")),
+
     vscode.commands.registerCommand("mahamCode.newChat", () => provider.newChat()),
+
+    vscode.window.onDidChangeActiveTextEditor((editor) => {
+      if (editor) provider.lastEditor = editor;
+    }),
+
+    vscode.workspace.onDidChangeWorkspaceFolders(() => provider.sendFolder()),
 
     vscode.commands.registerCommand("mahamCode.askSelection", () => {
       const editor = vscode.window.activeTextEditor;

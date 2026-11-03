@@ -15,7 +15,7 @@ class Api:
         self.window = None
 
     def send(self, user_text):
-        for chunk in self.convo.ask_stream(user_text):
+        for chunk in self.convo.run(user_text):
             self.window.evaluate_js(f"appendChunk({json.dumps(chunk)})")
         return True
 

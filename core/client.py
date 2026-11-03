@@ -18,4 +18,6 @@ def get_client() -> OpenAI:
     return OpenAI(
         api_key=api_key,
         base_url=os.environ.get("MAHAM_CODE_BASE_URL", "https://api.groq.com/openai/v1"),
+        # Free tiers have tight per-minute limits; wait and retry instead of failing.
+        max_retries=6,
     )
