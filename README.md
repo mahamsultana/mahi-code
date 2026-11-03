@@ -10,7 +10,12 @@
 
 An open-source coding assistant built from scratch to learn how tools like Claude Code work under the hood.
 
-It's being built in public, one milestone at a time. It can now read, list and write files in your project by itself; next it learns to ask before changing anything.
+It's being built in public, one milestone at a time. It already searches, reads, edits, creates and renames files in your project on its own; next it learns to ask before changing anything.
+
+<p align="center">
+  <img src="docs/images/hero.png" alt="Maham Code: the coding agent that works in your codebase. A terminal shows it planning a task, editing files with diffs and running tests." width="100%">
+</p>
+<p align="center"><sub>Product design concept. See <a href="#roadmap">Roadmap</a> for what works today.</sub></p>
 
 ## One brain, three faces
 
@@ -76,6 +81,20 @@ See `.env.example` for the matching model names.
 - [x] **Milestone 2:** Tools and the agent loop: the assistant explores, reads, edits, creates and renames files on its own
 - [ ] **Milestone 3:** Approval prompts: you confirm before it changes a file
 - [ ] **Milestone 4:** Running commands, with permission prompts
+
+## Where it's headed
+
+The designs below show where Maham Code is going: a plan it ticks off, diffs for every change, approval before edits, running your tests, and a settings screen for any model. Some of it works today (see the roadmap above); the rest is what the next milestones build.
+
+<p align="center">
+  <img src="docs/images/capabilities.png" alt="Capabilities: plans before it codes, understands your project, changes span files, shows every diff, asks before it acts, checks its own work." width="100%">
+</p>
+
+<p align="center">
+  <img src="docs/images/models.png" alt="Settings screen: pick a provider such as Groq, Gemini, OpenAI, Anthropic, Ollama or a custom endpoint, paste an API key, choose a model and test the connection." width="100%">
+</p>
+
+Switching models already works today: change three lines in `.env` (see [Using a different model](#using-a-different-model)). The settings screen is planned.
 
 ## How it works
 
